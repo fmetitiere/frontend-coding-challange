@@ -2,7 +2,20 @@ import React from "react";
 import { formatDate } from "../utils/date";
 
 const Loading = () => {
-  return <div className="loading">loading</div>;
+  return (
+    <div className="loading">
+      <div class="lds-roller">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+    </div>
+  );
 };
 
 function Item({ tenant, onDelete }) {
@@ -46,7 +59,7 @@ function TenantsList({ tenants, onDelete, loading, error }) {
           </table>
         </>
       )}
-      <div className="error-container">{error}</div>
+      <h3 className="error-container text-center">{error}</h3>
     </>
   );
 }

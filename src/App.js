@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { Button, Modal } from "react-bootstrap";
 
 import TenantsList from "./components/TenantsList";
+import AddTenantForm from "./components/AddTenantForm";
 import { Service } from "./Service";
-import { diffInMonths } from './utils/date';
-
+import { diffInMonths } from "./utils/date";
+import LottieBG from "./components/LottieBG";
 
 function TabsNav({ filter, setFilter }) {
   const NavItem = ({ children, id }) => (
-    <li className="nav-item">
+    <li className="nav-item mr-3">
       <button
         className={`nav-link ${filter === id ? "active" : ""}`}
         onClick={() => setFilter(id)}
@@ -34,6 +36,10 @@ function App() {
   const [tenants, setTenants] = useState([]);
   const [filter, setFilter] = useState("all");
 
+  const [show, setShow] = useState(false);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
+
   useEffect(() => {
     fetchTenants();
   }, []);
@@ -59,7 +65,7 @@ function App() {
       const newTenants = tenants.filter((t) => t.id !== id);
       setTenants(newTenants);
     } catch (error) {
-      setError("Something went wrong deleting the tenant. Try again.");
+      setError("There is an error. Please try again");
     } finally {
       setLoading(false);
     }
@@ -67,32 +73,60 @@ function App() {
 
   const filteredTenants = useMemo(() => {
     switch (filter) {
-      case 'all':
+      case "all":
         return tenants;
-      case 'payment-late':
-        return tenants.filter(t => t.paymentStatus === 'LATE');
-      case 'lease-less-than-month':
+      case "payment-late":
+        return tenants.filter((t) => t.paymentStatus === "LATE");
+      case "lease-less-than-month":
         const today = new Date();
-        return tenants.filter(t => diffInMonths(t.leaseEndDate, today) < 1);
+        return tenants.filter((t) => diffInMonths(t.leaseEndDate, today) < 1);
       default:
-        return tenants; 
+        return tenants;
     }
   }, [filter, tenants]);
 
+  const onAddTenant = async (tenant) => {
+    setLoading(true);
+    setError("");
+    try {
+      const newTenant = await Service.addTenant(tenant);
+      setTenants([...tenants, newTenant]);
+      setLoading(false);
+      return { error: false };
+    } catch (error) {
+      setError("Something went wrong adding the tenant. Try again.");
+      setLoading(false);
+      return { error: true };
+    }
+  };
+
   return (
     <>
-      <div className="container">
-        <h1>Tenants</h1>
-        <TabsNav filter={filter} setFilter={setFilter} />
-        <TenantsList
-          tenants={filteredTenants}
-          error={error}
-          loading={loading}
-          onDelete={onDeleteTenant}
-        />
+      <div className="lottie">
+        <LottieBG />
       </div>
-      <div className="container">
-        <button className="btn btn-secondary">Add Tenant</button>
+      <div className="wrapper">
+        <div className="container">
+          <div className="d-flex justify-content-between mb-5">
+            <h1>Tenants</h1>
+            <Button className="btn btn-secondary" onClick={handleShow}>
+              Add Tenant
+            </Button>
+          </div>
+          <TabsNav filter={filter} setFilter={setFilter} />
+          <TenantsList
+            tenants={filteredTenants}
+            error={error}
+            loading={loading}
+            onDelete={onDeleteTenant}
+          />
+
+          <>
+            <Modal show={show} onHide={handleClose}>
+              <AddTenantForm onAddTenant={onAddTenant} />
+            </Modal>
+          </>
+        </div>
       </div>
     </>
   );
